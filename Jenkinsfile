@@ -15,19 +15,26 @@ pipeline {
         }
 
         stage('Create_Infra') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'Ashutosh-temp', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                        terraform init
-                        terraform apply -auto-approve
-                        '''
-                    }
-                }
+    steps {
+        script {
+            // Set AWS credentials for Terraform
+            withCredentials([usernamePassword(credentialsId: 'Ashutosh-temp', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                sh '''
+                # Export AWS credentials
+                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                
+                # Initialize Terraform
+                terraform init
+                
+                # Apply Terraform configuration
+                terraform apply -auto-approve
+                '''
             }
         }
+    }
+}
+
 
         stage('Deploy_Apps') {
             steps {
