@@ -17,7 +17,7 @@ pipeline {
         stage('Create_Infra') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'Ashutosh-temp', variable: 'TKgiu3yUMK3ibd2UwjVU6cOuOszPHVUbPvgAjW3o')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Ashutosh-temp', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                         terraform init
                         terraform apply -auto-approve
@@ -30,18 +30,18 @@ pipeline {
         stage('Deploy_Apps') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: '79955b39-0d94-430b-bce2-6dd022de88c4', usernameVariable: 'kubeashukube', passwordVariable: 'ioaFMLdocker@1234')]) {
+                    withCredentials([usernamePassword(credentialsId: '79955b39-0d94-430b-bce2-6dd022de88c4', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
                         sh '''
                         docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-                        docker pull your-dockerhub-username/frontend:latest
-                        docker pull your-dockerhub-username/backend:latest
+                        docker pull $DOCKERHUB_USERNAME/frontend:latest
+                        docker pull $DOCKERHUB_USERNAME/backend:latest
                         '''
                     }
                 }
                 script {
                     sh '''
                     # Assuming the scripts are stored in your repository and are executed using remote-exec provisioners
-                    terraform apply -var="frontend_script_path=/path/to/frontend.sh" -var="backend_script_path=/path/to/backend.sh"
+                    terraform apply -var="frontend_script_path=${WORKSPACE}/path/to/frontend.sh" -var="backend_script_path=${WORKSPACE}/path/to/backend.sh" -auto-approve
                     '''
                 }
             }
