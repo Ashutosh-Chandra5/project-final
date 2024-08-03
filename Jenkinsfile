@@ -2,22 +2,23 @@ pipeline {
     agent any
 
     environment {
-        AWS_CREDENTIALS = credentials('Ashutosh-temp') // Replace with your actual credential ID
-        DOCKER_IMAGE_FRONTEND = 'kubeashukube/frontend:latest'
-        DOCKER_IMAGE_BACKEND = 'kubeashukube/backend:latest'
+        AWS_CREDENTIALS = credentials('Ashutosh-temp')
+        DOCKERHUB_CREDENTIALS = credentials('79955b39-0d94-430b-bce2-6dd022de88c4')
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Clone your Git repository
+                git url: 'https://github.com/Ashutosh-Chandra5/project-final.git', branch: 'main'
+            }
+        }
+
         stage('Create_Infra') {
             steps {
                 script {
-                    // Clone the repository containing Terraform scripts
-                    git url: 'https://github.com/Ashutosh-Chandra5/project-final.git', branch: 'main'
-                    
-                    // Initialize and apply Terraform
-                    withCredentials([string(credentialsId: 'terraform-token-id', variable: 'TF_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'Ashutosh-temp', variable: 'TKgiu3yUMK3ibd2UwjVU6cOuOszPHVUbPvgAjW3o')]) {
                         sh '''
-                        cd terraform
                         terraform init
                         terraform apply -auto-approve
                         '''
@@ -29,10 +30,18 @@ pipeline {
         stage('Deploy_Apps') {
             steps {
                 script {
-                    // Use Terraform provisioners to execute the scripts
+                    withCredentials([usernamePassword(credentialsId: '79955b39-0d94-430b-bce2-6dd022de88c4', usernameVariable: 'kubeashukube', passwordVariable: 'ioaFMLdocker@1234')]) {
+                        sh '''
+                        docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+                        docker pull your-dockerhub-username/frontend:latest
+                        docker pull your-dockerhub-username/backend:latest
+                        '''
+                    }
+                }
+                script {
                     sh '''
-                    cd terraform
-                    terraform apply -auto-approve
+                    # Assuming the scripts are stored in your repository and are executed using remote-exec provisioners
+                    terraform apply -var="frontend_script_path=/path/to/frontend.sh" -var="backend_script_path=/path/to/backend.sh"
                     '''
                 }
             }
@@ -41,11 +50,8 @@ pipeline {
         stage('Test_Solution') {
             steps {
                 script {
-                    // Test if the frontend is accessible
-                    sh '''
-                    FRONTEND_IP=$(terraform output -raw frontend_ip)
-                    curl http://$FRONTEND_IP
-                    '''
+                    def frontendIP = sh(script: "terraform output -raw frontend_ip", returnStdout: true).trim()
+                    sh "curl http://${frontendIP}:8080" // Adjust port if necessary
                 }
             }
         }
